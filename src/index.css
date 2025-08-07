@@ -38,6 +38,13 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    /* Credit Score Colors */
+    --credit-poor: 0 84% 50%;       /* Red: 300-580 */
+    --credit-fair: 25 95% 53%;      /* Orange: 580-670 */
+    --credit-good: 48 89% 50%;      /* Yellow: 670-740 */
+    --credit-very-good: 120 61% 65%; /* Light Green: 740-800 */
+    --credit-excellent: 120 61% 34%; /* Green: 800-900 */
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
