@@ -32,20 +32,14 @@ const CreditScoreDashboard = () => {
     rentPaymentRatio: '100'
   });
 
-  const [creditResult, setCreditResult] = useState<CreditScoreResult>({
-    creditScore: 681,
-    isApproved: true,
-    loanAmount: 200000,
-    highlights: ["Building credit history", "Some positive patterns", "Room for improvement"],
-    suggestions: ["Maintain payment consistency", "Build employment history", "Monitor expenses"]
-  });
+  const [creditResult, setCreditResult] = useState<CreditScoreResult | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Calculate credit score when form data changes
-  useEffect(() => {
+  const handleCheckScore = () => {
     const {
       monthlyIncome,
       monthlyExpenses,
@@ -56,8 +50,16 @@ const CreditScoreDashboard = () => {
       rentPaymentRatio
     } = formData;
 
-    // Only calculate if we have minimum required data
-    if (monthlyIncome && monthlyExpenses && educationLevel && employmentYears) {
+    // Validate required fields
+    if (!monthlyIncome || !monthlyExpenses || !educationLevel || !employmentYears) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setIsCalculating(true);
+
+    // Simulate processing time
+    setTimeout(() => {
       const inputs: CreditScoreInputs = {
         rentPaymentOnTimeRatio: parseFloat(rentPaymentRatio) / 100 || 1,
         monthlyIncome: parseFloat(monthlyIncome) || 0,
@@ -71,8 +73,9 @@ const CreditScoreDashboard = () => {
 
       const result = calculateCreditScore(inputs);
       setCreditResult(result);
-    }
-  }, [formData]);
+      setIsCalculating(false);
+    }, 1000);
+  };
 
   const getScoreStatus = (score: number) => {
     if (score < 580) return { status: 'Poor', color: 'destructive' };
@@ -94,15 +97,26 @@ const CreditScoreDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="w-full max-w-md mx-auto">
-                  <CreditScoreGauge score={creditResult.creditScore} />
+                  {creditResult ? (
+                    <CreditScoreGauge score={creditResult.creditScore} />
+                  ) : (
+                    <div className="h-48 flex items-center justify-center text-muted-foreground">
+                      Click "Check My Score" to see your credit score
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
             <div className="grid grid-cols-1 gap-3">
-              <Button className="w-full" size="lg">
+              <Button 
+                className="w-full" 
+                size="lg" 
+                onClick={handleCheckScore}
+                disabled={isCalculating}
+              >
                 <CreditCard className="mr-2 h-5 w-5" />
-                Check My Score
+                {isCalculating ? 'Calculating...' : 'Check My Score'}
               </Button>
               <Button variant="outline" className="w-full" size="lg">
                 <FileText className="mr-2 h-5 w-5" />
@@ -215,66 +229,68 @@ const CreditScoreDashboard = () => {
         </div>
 
         {/* Bottom Section - Outputs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Credit Score Summary */}
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle className="flex items-center justify-center gap-2">
-                <ThumbsUp className="h-5 w-5 text-green-600" />
-                Credit Score
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <div className="text-3xl font-bold mb-2">{creditResult.creditScore}</div>
-              <Badge variant={getScoreStatus(creditResult.creditScore).color as any}>
-                {getScoreStatus(creditResult.creditScore).status}
-              </Badge>
-              <div className="mt-2 text-sm text-muted-foreground">
-                {creditResult.isApproved ? `Approved for ₹${creditResult.loanAmount.toLocaleString()}` : 'Not approved for current loan amount'}
-              </div>
-            </CardContent>
-          </Card>
+        {creditResult && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Credit Score Summary */}
+            <Card>
+              <CardHeader className="text-center">
+                <CardTitle className="flex items-center justify-center gap-2">
+                  <ThumbsUp className="h-5 w-5 text-green-600" />
+                  Credit Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <div className="text-3xl font-bold mb-2">{creditResult.creditScore}</div>
+                <Badge variant={getScoreStatus(creditResult.creditScore).color as any}>
+                  {getScoreStatus(creditResult.creditScore).status}
+                </Badge>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  {creditResult.isApproved ? `Approved for ₹${creditResult.loanAmount.toLocaleString()}` : 'Not approved for current loan amount'}
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Highlights */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-blue-600" />
-                Highlights
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {creditResult.highlights.map((highlight, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
-                    {highlight}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+            {/* Highlights */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-blue-600" />
+                  Highlights
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {creditResult.highlights.map((highlight, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                      {highlight}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
 
-          {/* Suggestions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
-                Suggestions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {creditResult.suggestions.map((suggestion, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0" />
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Suggestions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-orange-600" />
+                  Suggestions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {creditResult.suggestions.map((suggestion, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0" />
+                      {suggestion}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
