@@ -21,80 +21,84 @@ const CreditScoreGauge: React.FC<CreditScoreGaugeProps> = ({ score, className = 
 
   return (
     <div className={`relative ${className}`}>
-      <svg viewBox="0 0 200 120" className="w-full h-full">
-        {/* Background arc */}
+      <svg viewBox="0 0 240 140" className="w-full h-full">
+        {/* Perfect semicircle background */}
         <path
-          d="M 30 100 A 70 70 0 0 1 170 100"
+          d="M 40 120 A 80 80 0 0 1 200 120"
           fill="none"
           stroke="hsl(var(--border))"
-          strokeWidth="8"
+          strokeWidth="12"
           strokeLinecap="round"
         />
         
-        {/* Score segments */}
+        {/* Credit score segments - Perfect semicircle divisions */}
         {/* Poor: 300-580 (Red) */}
         <path
-          d="M 30 100 A 70 70 0 0 1 65 50"
+          d="M 40 120 A 80 80 0 0 1 85 60"
           fill="none"
           stroke="hsl(var(--credit-poor))"
-          strokeWidth="8"
+          strokeWidth="12"
           strokeLinecap="round"
         />
         
         {/* Fair: 580-670 (Orange) */}
         <path
-          d="M 65 50 A 70 70 0 0 1 100 30"
+          d="M 85 60 A 80 80 0 0 1 120 40"
           fill="none"
           stroke="hsl(var(--credit-fair))"
-          strokeWidth="8"
+          strokeWidth="12"
           strokeLinecap="round"
         />
         
         {/* Good: 670-740 (Yellow) */}
         <path
-          d="M 100 30 A 70 70 0 0 1 135 50"
+          d="M 120 40 A 80 80 0 0 1 155 60"
           fill="none"
           stroke="hsl(var(--credit-good))"
-          strokeWidth="8"
+          strokeWidth="12"
           strokeLinecap="round"
         />
         
         {/* Very Good: 740-800 (Light Green) */}
         <path
-          d="M 135 50 A 70 70 0 0 1 170 100"
+          d="M 155 60 A 80 80 0 0 1 180 85"
           fill="none"
           stroke="hsl(var(--credit-very-good))"
-          strokeWidth="6"
+          strokeWidth="12"
           strokeLinecap="round"
         />
         
-        {/* Excellent: 800-900 (Green) - just the end portion */}
+        {/* Excellent: 800-900 (Green) */}
         <path
-          d="M 155 70 A 70 70 0 0 1 170 100"
+          d="M 180 85 A 80 80 0 0 1 200 120"
           fill="none"
           stroke="hsl(var(--credit-excellent))"
-          strokeWidth="8"
+          strokeWidth="12"
           strokeLinecap="round"
         />
 
-        {/* Needle */}
+        {/* Needle - positioned from center */}
         <line
-          x1="100"
-          y1="100"
-          x2={100 + 50 * Math.cos((angle - 90) * Math.PI / 180)}
-          y2={100 + 50 * Math.sin((angle - 90) * Math.PI / 180)}
+          x1="120"
+          y1="120"
+          x2={120 + 60 * Math.cos((angle - 90) * Math.PI / 180)}
+          y2={120 + 60 * Math.sin((angle - 90) * Math.PI / 180)}
           stroke="hsl(var(--foreground))"
-          strokeWidth="3"
+          strokeWidth="4"
           strokeLinecap="round"
         />
         
         {/* Center dot */}
         <circle
-          cx="100"
-          cy="100"
-          r="4"
+          cx="120"
+          cy="120"
+          r="6"
           fill="hsl(var(--foreground))"
         />
+        
+        {/* Score labels */}
+        <text x="40" y="135" textAnchor="middle" className="text-xs fill-muted-foreground">300</text>
+        <text x="200" y="135" textAnchor="middle" className="text-xs fill-muted-foreground">900</text>
       </svg>
       
       {/* Score display */}

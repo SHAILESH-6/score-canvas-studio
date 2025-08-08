@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,31 +7,72 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import CreditScoreGauge from './CreditScoreGauge';
 import { CreditCard, FileText, TrendingUp, ThumbsUp, AlertCircle, Target } from 'lucide-react';
+import { calculateCreditScore, CreditScoreInputs, CreditScoreResult } from '@/utils/creditScoreCalculator';
 
 interface FormData {
   rent: string;
   monthlyIncome: string;
+  monthlyExpenses: string;
   missedPayments: string;
   educationLevel: string;
   employmentYears: string;
   loanAmount: string;
+  rentPaymentRatio: string;
 }
 
 const CreditScoreDashboard = () => {
   const [formData, setFormData] = useState<FormData>({
     rent: '',
     monthlyIncome: '',
+    monthlyExpenses: '',
     missedPayments: '0',
     educationLevel: '',
     employmentYears: '',
-    loanAmount: ''
+    loanAmount: '',
+    rentPaymentRatio: '100'
   });
 
-  const [currentScore] = useState(681);
+  const [creditResult, setCreditResult] = useState<CreditScoreResult>({
+    creditScore: 681,
+    isApproved: true,
+    loanAmount: 200000,
+    highlights: ["Building credit history", "Some positive patterns", "Room for improvement"],
+    suggestions: ["Maintain payment consistency", "Build employment history", "Monitor expenses"]
+  });
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Calculate credit score when form data changes
+  useEffect(() => {
+    const {
+      monthlyIncome,
+      monthlyExpenses,
+      missedPayments,
+      educationLevel,
+      employmentYears,
+      loanAmount,
+      rentPaymentRatio
+    } = formData;
+
+    // Only calculate if we have minimum required data
+    if (monthlyIncome && monthlyExpenses && educationLevel && employmentYears) {
+      const inputs: CreditScoreInputs = {
+        rentPaymentOnTimeRatio: parseFloat(rentPaymentRatio) / 100 || 1,
+        monthlyIncome: parseFloat(monthlyIncome) || 0,
+        monthlyExpenses: parseFloat(monthlyExpenses) || 0,
+        missedUtilityPayments: parseInt(missedPayments) || 0,
+        educationLevel: educationLevel === 'high-school' ? 0 : 
+                       educationLevel === 'college' || educationLevel === 'bachelors' ? 1 : 2,
+        employmentYears: parseFloat(employmentYears) || 0,
+        loanAmount: parseFloat(loanAmount) || parseFloat(monthlyIncome) * 3 || 200000
+      };
+
+      const result = calculateCreditScore(inputs);
+      setCreditResult(result);
+    }
+  }, [formData]);
 
   const getScoreStatus = (score: number) => {
     if (score < 580) return { status: 'Poor', color: 'destructive' };
@@ -40,18 +81,6 @@ const CreditScoreDashboard = () => {
     if (score < 800) return { status: 'Very Good', color: 'secondary' };
     return { status: 'Excellent', color: 'default' };
   };
-
-  const highlights = [
-    "No missed payments in 12 months",
-    "Stable employment record",
-    "Good debt-to-income ratio"
-  ];
-
-  const suggestions = [
-    "Reduce credit utilization below 30%",
-    "Pay EMIs on time consistently",
-    "Consider increasing credit limit"
-  ];
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -65,7 +94,7 @@ const CreditScoreDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="w-full max-w-md mx-auto">
-                  <CreditScoreGauge score={currentScore} />
+                  <CreditScoreGauge score={creditResult.creditScore} />
                 </div>
               </CardContent>
             </Card>
@@ -94,17 +123,6 @@ const CreditScoreDashboard = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label htmlFor="rent">Monthly Rent (₹)</Label>
-                  <Input
-                    id="rent"
-                    type="number"
-                    placeholder="Enter your monthly rent"
-                    value={formData.rent}
-                    onChange={(e) => handleInputChange('rent', e.target.value)}
-                  />
-                </div>
-
-                <div>
                   <Label htmlFor="income">Monthly Income (₹)</Label>
                   <Input
                     id="income"
@@ -112,6 +130,30 @@ const CreditScoreDashboard = () => {
                     placeholder="Enter your monthly income"
                     value={formData.monthlyIncome}
                     onChange={(e) => handleInputChange('monthlyIncome', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="expenses">Monthly Expenses (₹)</Label>
+                  <Input
+                    id="expenses"
+                    type="number"
+                    placeholder="Enter your monthly expenses"
+                    value={formData.monthlyExpenses}
+                    onChange={(e) => handleInputChange('monthlyExpenses', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="rentRatio">Rent Payment On-Time Ratio (%)</Label>
+                  <Input
+                    id="rentRatio"
+                    type="number"
+                    placeholder="90"
+                    min="0"
+                    max="100"
+                    value={formData.rentPaymentRatio}
+                    onChange={(e) => handleInputChange('rentPaymentRatio', e.target.value)}
                   />
                 </div>
 
@@ -183,10 +225,13 @@ const CreditScoreDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-center">
-              <div className="text-3xl font-bold mb-2">{currentScore}</div>
-              <Badge variant={getScoreStatus(currentScore).color as any}>
-                {getScoreStatus(currentScore).status}
+              <div className="text-3xl font-bold mb-2">{creditResult.creditScore}</div>
+              <Badge variant={getScoreStatus(creditResult.creditScore).color as any}>
+                {getScoreStatus(creditResult.creditScore).status}
               </Badge>
+              <div className="mt-2 text-sm text-muted-foreground">
+                {creditResult.isApproved ? `Approved for ₹${creditResult.loanAmount.toLocaleString()}` : 'Not approved for current loan amount'}
+              </div>
             </CardContent>
           </Card>
 
@@ -200,7 +245,7 @@ const CreditScoreDashboard = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {highlights.map((highlight, index) => (
+                {creditResult.highlights.map((highlight, index) => (
                   <li key={index} className="flex items-start gap-2 text-sm">
                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
                     {highlight}
@@ -220,7 +265,7 @@ const CreditScoreDashboard = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {suggestions.map((suggestion, index) => (
+                {creditResult.suggestions.map((suggestion, index) => (
                   <li key={index} className="flex items-start gap-2 text-sm">
                     <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0" />
                     {suggestion}
